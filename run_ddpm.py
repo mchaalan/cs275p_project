@@ -1,4 +1,4 @@
-import math
+import tensorflow as tf
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,13 +8,14 @@ from eval import KID
 from tensorflow import keras
 
 from unet import unet_model
-from ddpm_utils import *
+from ddpm_utils import load_ddpm_dataset
+from save_img import save_image
 
 print("TensorFlow version:", tf.__version__)
 print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
 print("Physical devices:", tf.config.list_physical_devices())
 
-train = True
+train = False
 
 batch_size = 64
 kid_diffusion_steps = 5
@@ -317,6 +318,14 @@ class DiffusionModel(keras.Model):
         plt.show()
         plt.close()
 
+    def download_images(self, epoch=None, logs=None, num_rows=3, num_cols=6):
+        generated_images = self.generate(num_images=num_rows * num_cols)
+
+        for row in range(num_rows):
+            for col in range(num_cols):
+                index = row * num_cols + col
+                save_image(generated_images[index], f"image_{col}_{row}_{index}.png")
+
 # Build the unet model
 network = unet_model(
     img_size=image_size,
@@ -371,13 +380,16 @@ if train:
     )
 
     print("save model")
-    model.network.save_weights("normal_baseline_network.weights.h5")
-    model.ema_network.save_weights("normal_baseline__ema.weights.h5")
+    model.network.save_weights("normal_baseline_network_ddpm.weights.h5")
+    model.ema_network.save_weights("normal_baseline_ema_ddpm.weights.h5")
 
 else:
     print("load_model")
-    model.network.load_weights("normal_baseline_network.weights.h5")
-    model.ema_network.load_weights("normal_baseline__ema.weights.h5")
+    model.network.load_weights("normal_baseline_network_ddpm.weights.h5")
+    model.ema_network.load_weights("normal_baseline_ema_ddpm.weights.h5")
 
-    print("plotting images")
-    model.plot_images(num_rows=3, num_cols=6)
+    # print("plotting images")
+    # model.plot_images(num_rows=3, num_cols=6)
+
+    # downloading images
+    model.download_images(num_rows=3, num_cols=6)

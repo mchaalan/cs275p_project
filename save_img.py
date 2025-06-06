@@ -1,11 +1,8 @@
+from tensorflow.keras.preprocessing.image import save_img
 
-def tensor_to_png(tensor, filename):
-    # Ensure the tensor is in the correct format for PNG encoding
-    tensor = tf.cast(tensor, tf.uint8)
+def save_image(image_tensor, filename):
+    # Convert the EagerTensor to a NumPy array
+    numpy_array = image_tensor.numpy()
 
-    # Encode the tensor as a PNG image
-    png_image = tf.io.encode_png(tensor)
-
-    # Save the PNG image to a file
-    with open(filename, 'wb') as f:
-        f.write(png_image.numpy())
+    # Save the NumPy array as a PNG image
+    save_img(filename, numpy_array)

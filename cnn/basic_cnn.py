@@ -1,19 +1,20 @@
 import keras.optimizers
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing import image_dataset_from_directory
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.layers import Rescaling
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (Conv2D, MaxPooling2D, GlobalAveragePooling2D,
+                                     Dense, Dropout, BatchNormalization, Rescaling,
+                                     RandomFlip, RandomRotation, RandomZoom)
 
 # Config
 BATCH_SIZE = 32
-IMG_SIZE = (180, 180)
-EPOCHS = 20
+IMG_SIZE = (256, 256)
+EPOCHS = 50
 TRAIN_DIR = '/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train'
 VAL_DIR = '/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/test'
 
-# Data loading with normalization
+# Load datasets
 train_ds = image_dataset_from_directory(
     TRAIN_DIR,
     labels='inferred',
@@ -32,52 +33,82 @@ val_ds = image_dataset_from_directory(
 )
 
 AUTOTUNE = tf.data.AUTOTUNE
-normalization_layer = Rescaling(1./255)
-train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y)).prefetch(AUTOTUNE)
-val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y)).prefetch(AUTOTUNE)
 
-# CNN Model
-model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(*IMG_SIZE, 3)),
-    MaxPooling2D(2, 2),
-    BatchNormalization(),
-
-    Conv2D(64, (3, 3), activation='relu'),
-    MaxPooling2D(2, 2),
-    BatchNormalization(),
-
-    Conv2D(128, (3, 3), activation='relu'),
-    MaxPooling2D(2, 2),
-    BatchNormalization(),
-
-    Flatten(),
-    Dense(128, activation='relu'),
-    Dropout(0.5),
-    Dense(1, activation='sigmoid')  # Binary classification
+# Data augmentation layer
+data_augmentation = Sequential([
+    RandomFlip("horizontal"),
+    RandomRotation(0.1),
+    RandomZoom(0.1)
 ])
 
-# Compile
+# Apply augmentation only to training
+train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
+train_ds = train_ds.map(lambda x, y: (Rescaling(1./255)(x), y)).prefetch(AUTOTUNE)
+val_ds = val_ds.map(lambda x, y: (Rescaling(1./255)(x), y)).prefetch(AUTOTUNE)
+
+# Model definition
+model = Sequential([
+    Rescaling(1./255, input_shape=(*IMG_SIZE, 3)),
+
+    # Block 1
+    Conv2D(32, (3, 3), activation='relu', padding='same'),
+    Conv2D(32, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+
+    # Block 2
+    Conv2D(64, (3, 3), activation='relu', padding='same'),
+    Conv2D(64, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+    Dropout(0.2),
+
+    # Block 3
+    Conv2D(128, (3, 3), activation='relu', padding='same'),
+    Conv2D(128, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+    Dropout(0.3),
+
+    # Block 4
+    Conv2D(256, (3, 3), activation='relu', padding='same'),
+    Conv2D(256, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+    Dropout(0.4),
+
+    # Block 5
+    Conv2D(512, (3, 3), activation='relu', padding='same'),
+    Conv2D(512, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+    Dropout(0.5),
+
+    # Block 6 — deeper abstract features
+    Conv2D(1024, (3, 3), activation='relu', padding='same'),
+    Conv2D(1024, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),
+    BatchNormalization(),
+    Dropout(0.5),
+
+    # Classification Head
+    GlobalAveragePooling2D(),
+    Dense(512, activation='relu'),
+    Dropout(0.5),
+    Dense(1, activation='sigmoid')
+])
+
+# Compile model
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=1e-4),
     loss='binary_crossentropy',
     metrics=['accuracy']
 )
 
-plateu = keras.callbacks.ReduceLROnPlateau(
-    monitor="val_loss",
-    factor=0.1,
-    patience=10,
-    verbose=0,
-    mode="auto",
-    min_delta=0.0001,
-    cooldown=0,
-    min_lr=0.0
-)
-
-# Training
+# Train
 model.fit(
     train_ds,
     validation_data=val_ds,
     epochs=EPOCHS,
-    callbacks=[EarlyStopping(patience=10, restore_best_weights=True), plateu]
+    callbacks=[EarlyStopping(patience=10, restore_best_weights=True)]
 )

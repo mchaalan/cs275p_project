@@ -644,12 +644,12 @@ print("training model")
 # model.plot_images(num_rows=1, num_cols=2)
 
 # print("save model")
-# model.network.save_weights("normal_baseline_network.weights.h5")
-# model.ema_network.save_weights("normal_baseline__ema.weights.h5")
+# model.network.save_weights("normal_baseline_network_ddpm.weights.h5")
+# model.ema_network.save_weights("normal_baseline_ema_ddpm.weights.h5")
 
 print("load_model")
-model.network.load_weights("normal_baseline_network.weights.h5")
-model.ema_network.load_weights("normal_baseline__ema.weights.h5")
+model.network.load_weights("normal_baseline_network_ddpm.weights.h5")
+model.ema_network.load_weights("normal_baseline_ema_ddpm.weights.h5")
 
 print("plotting images")
 start_time = time.perf_counter()

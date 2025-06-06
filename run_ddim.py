@@ -1,6 +1,6 @@
 import os
 
-from ddpm_utils import load_ddpm_dataset
+import tensorflow as tf
 from eval import KID
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -13,9 +13,11 @@ import keras
 from keras import layers
 
 from residual_unet import residual_unet_model
-from ddim_utils import *
+from ddim_utils import load_ddim_dataset
+from ddim_utils import ops
+from save_img import save_image
 
-train = True
+train = False
 
 # data
 dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/NORMAL"
@@ -41,7 +43,7 @@ learning_rate = 1e-3
 weight_decay = 1e-4
 
 # load dataset
-train_dataset = load_ddpm_dataset(dataset_path, batch_size)
+train_dataset = load_ddim_dataset(dataset_path, batch_size)
 
 @keras.saving.register_keras_serializable()
 class DiffusionModel(keras.Model):
@@ -230,6 +232,17 @@ class DiffusionModel(keras.Model):
         plt.tight_layout()
         plt.show()
         plt.close()
+
+    def download_images(self, epoch=None, logs=None, num_rows=3, num_cols=6):
+        generated_images = self.generate(
+            num_images=num_rows * num_cols,
+            diffusion_steps=plot_diffusion_steps,
+        )
+
+        for row in range(num_rows):
+            for col in range(num_cols):
+                index = row * num_cols + col
+                save_image(generated_images[index], f"image_{col}_{row}_{index}.png")
         
 # create and compile the model
 model = DiffusionModel(image_size, widths, block_depth)
@@ -242,9 +255,10 @@ model.compile(
     loss=keras.losses.mean_absolute_error,
 )
 
+# calculate mean and variance of training dataset for normalization
+model.normalizer.adapt(train_dataset)
+
 if train:
-    # calculate mean and variance of training dataset for normalization
-    model.normalizer.adapt(train_dataset)
     print(model.summary())
     print(model.network.summary())
 
@@ -256,6 +270,7 @@ if train:
         batch_size=batch_size,
         callbacks=[
             keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
+            # keras.callbacks.LambdaCallback(on_epoch_end=model.download_images)
         ],
     )
 
@@ -265,8 +280,10 @@ if train:
 
 else:
     print("load_model")
-    model.network.load_weights("normal_baseline_network.weights.h5")
-    model.ema_network.load_weights("normal_baseline__ema.weights.h5")
+    model.network.load_weights("normal_baseline_network_ddim.weights.h5")
+    model.ema_network.load_weights("normal_baseline_ema_ddim.weights.h5")
 
     print("plotting images")
     model.plot_images(num_rows=3, num_cols=6)
+
+    model.download_images(num_rows=3, num_cols=6)
