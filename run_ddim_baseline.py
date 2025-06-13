@@ -1,6 +1,8 @@
 import os
 
 import tensorflow as tf
+
+from dynamic_metrics import DynamicKID, DynamicFID
 from eval import KID
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -13,16 +15,23 @@ import keras
 from keras import layers
 
 from residual_unet import residual_unet_model
-from ddim_utils import load_ddim_dataset
-from ddim_utils import ops
-from save_img import save_image
+from ddim_utils import load_ddim_dataset, ops, save_image
 
-train = False
+train = True
+normal = False
 
-# data
-dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/NORMAL"
+# data & weights
+if normal:
+    dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/NORMAL"
+    network_weights = "ddim_baseline/normal_baseline_network_ddim.weights.h5"
+    ema_weights = "ddim_baseline/normal_baseline_ema_ddim.weights.h5"
+else:
+    dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/PNEUMONIA"
+    network_weights = "ddim_baseline/pneumonia_baseline_network_ddim.weights.h5"
+    ema_weights = "ddim_baseline/pneumonia_baseline_ema_ddim.weights.h5"
+
 dataset_repetitions = 5
-num_epochs = 50  # train for at least 50 epochs for good results
+num_epochs = 301  # train for at least 50 epochs for good results
 image_size = 64
 # KID = Kernel Inception Distance, see related section
 kid_diffusion_steps = 5
@@ -216,34 +225,35 @@ class DiffusionModel(keras.Model):
         return {m.name: m.result() for m in self.metrics}
 
     def plot_images(self, epoch=None, logs=None, num_rows=3, num_cols=6):
-        # plot random generated images for visual evaluation of generation quality
+        if epoch % 10 == 0:
+            # plot random generated images for visual evaluation of generation quality
+            generated_images = self.generate(
+                num_images=num_rows * num_cols,
+                diffusion_steps=plot_diffusion_steps,
+            )
+
+            plt.figure(figsize=(num_cols * 2.0, num_rows * 2.0))
+            for row in range(num_rows):
+                for col in range(num_cols):
+                    index = row * num_cols + col
+                    plt.subplot(num_rows, num_cols, index + 1)
+                    plt.imshow(generated_images[index])
+                    plt.axis("off")
+            plt.tight_layout()
+            plt.show()
+            plt.close()
+
+    def download_images(self, epoch=None, logs=None, directory="baseline", num_rows=3, num_cols=6):
         generated_images = self.generate(
             num_images=num_rows * num_cols,
             diffusion_steps=plot_diffusion_steps,
         )
 
-        plt.figure(figsize=(num_cols * 2.0, num_rows * 2.0))
         for row in range(num_rows):
             for col in range(num_cols):
                 index = row * num_cols + col
-                plt.subplot(num_rows, num_cols, index + 1)
-                plt.imshow(generated_images[index])
-                plt.axis("off")
-        plt.tight_layout()
-        plt.show()
-        plt.close()
+                save_image(generated_images[index], f"{directory}/image_{col}_{row}_{index}.png")
 
-    def download_images(self, epoch=None, logs=None, num_rows=3, num_cols=6):
-        generated_images = self.generate(
-            num_images=num_rows * num_cols,
-            diffusion_steps=plot_diffusion_steps,
-        )
-
-        for row in range(num_rows):
-            for col in range(num_cols):
-                index = row * num_cols + col
-                save_image(generated_images[index], f"image_{col}_{row}_{index}.png")
-        
 # create and compile the model
 model = DiffusionModel(image_size, widths, block_depth)
 
@@ -252,7 +262,7 @@ model.compile(
     optimizer=keras.optimizers.AdamW(
         learning_rate=learning_rate, weight_decay=weight_decay
     ),
-    loss=keras.losses.mean_absolute_error,
+    loss=keras.losses.MeanSquaredError()
 )
 
 # calculate mean and variance of training dataset for normalization
@@ -269,21 +279,34 @@ if train:
         epochs=num_epochs,
         batch_size=batch_size,
         callbacks=[
-            keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
-            # keras.callbacks.LambdaCallback(on_epoch_end=model.download_images)
+            keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images)
         ],
     )
 
-    print("save model")
-    model.network.save_weights("normal_baseline_network_ddim.weights.h5")
-    model.ema_network.save_weights("normal_baseline_ema_ddim.weights.h5")
+    # print("save model")
+    # model.network.save_weights(network_weights)
+    # model.ema_network.save_weights(ema_weights)
 
 else:
     print("load_model")
-    model.network.load_weights("normal_baseline_network_ddim.weights.h5")
-    model.ema_network.load_weights("normal_baseline_ema_ddim.weights.h5")
+    model.network.load_weights(network_weights)
+    model.ema_network.load_weights(ema_weights)
 
-    print("plotting images")
-    model.plot_images(num_rows=3, num_cols=6)
+    # Get kid scores
+    kid = DynamicKID(diffusion_type="ddim", img_size=64)
 
-    model.download_images(num_rows=3, num_cols=6)
+    kid_score = 0
+    batch_counter = 0
+    for batch in train_dataset:
+        kid.update_state(batch, model)
+        kid_score += kid.result().numpy()
+        print(kid.result().numpy())
+        batch_counter += 1
+
+    kid_score /= batch_counter
+    print(kid_score)
+
+    # model.download_images(directory="img_baseline_pneumonia", num_rows=100, num_cols=10)
+
+    # print("plotting images")
+    # model.plot_images(epoch=0, num_rows=1, num_cols=2)

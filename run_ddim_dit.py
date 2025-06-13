@@ -28,7 +28,7 @@ else:
     ema_weights = "ddim_dit/pneumonia_dit_ema_ddim.weights.h5"
 
 dataset_repetitions = 5
-num_epochs = 301  # train for at least 50 epochs for good results
+num_epochs = 301
 image_size = 64
 # KID = Kernel Inception Distance, see related section
 kid_diffusion_steps = 5
