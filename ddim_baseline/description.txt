@@ -1,0 +1,5 @@
+NORMAL & PNEUMONIA
+- 301 epochs
+- residual unet architecture from baseline
+- changed MeanAbsoluteError -> MeanSquaredError
+- 1342 images for both normal and pneumonia

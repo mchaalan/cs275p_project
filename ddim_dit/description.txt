@@ -1,0 +1,6 @@
+NORMAL & PNEUMONIA params
+img_size=64,
+patch_size=4,
+embed_dim=256,
+depth=6,
+num_heads=6
