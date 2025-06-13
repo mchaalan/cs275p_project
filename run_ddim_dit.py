@@ -20,12 +20,12 @@ normal = False
 # data & weights
 if normal:
     dataset_path = "/path/to/dataset"
-    network_weights = "ddim_dit/normal_dit_network_ddim.weights.h5"
-    ema_weights = "ddim_dit/normal_dit_ema_ddim.weights.h5"
+    network_weights = "ddim_dit_metadata/normal_dit_network_ddim.weights.h5"
+    ema_weights = "ddim_dit_metadata/normal_dit_ema_ddim.weights.h5"
 else:
     dataset_path = "path/to/dataset"
-    network_weights = "ddim_dit/pneumonia_dit_network_ddim.weights.h5"
-    ema_weights = "ddim_dit/pneumonia_dit_ema_ddim.weights.h5"
+    network_weights = "ddim_dit_metadata/pneumonia_dit_network_ddim.weights.h5"
+    ema_weights = "ddim_dit_metadata/pneumonia_dit_ema_ddim.weights.h5"
 
 dataset_repetitions = 5
 num_epochs = 301

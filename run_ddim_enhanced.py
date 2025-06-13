@@ -22,12 +22,12 @@ normal = False
 # data & weights
 if normal:
     dataset_path = "path/to/dataset"
-    network_weights = "ddim_enhanced_unet/normal_enhanced_network_ddim.weights.h5"
-    ema_weights = "ddim_enhanced_unet/normal_enhanced_ema_ddim.weights.h5"
+    network_weights = "ddim_enhanced_unet_metadata/normal_enhanced_network_ddim.weights.h5"
+    ema_weights = "ddim_enhanced_unet_metadata/normal_enhanced_ema_ddim.weights.h5"
 else:
     dataset_path = "path/to/dataset"
-    network_weights = "ddim_enhanced_unet/pneumonia_enhanced_network_ddim.weights.h5"
-    ema_weights = "ddim_enhanced_unet/pneumonia_enhanced_ema_ddim.weights.h5"
+    network_weights = "ddim_enhanced_unet_metadata/pneumonia_enhanced_network_ddim.weights.h5"
+    ema_weights = "ddim_enhanced_unet_metadata/pneumonia_enhanced_ema_ddim.weights.h5"
 
 dataset_repetitions = 5
 num_epochs = 301

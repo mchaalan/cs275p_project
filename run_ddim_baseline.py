@@ -23,12 +23,12 @@ normal = False
 # data & weights
 if normal:
     dataset_path = "path/to/dataset"
-    network_weights = "ddim_baseline/normal_baseline_network_ddim.weights.h5"
-    ema_weights = "ddim_baseline/normal_baseline_ema_ddim.weights.h5"
+    network_weights = "ddim_baseline_metadata/normal_baseline_network_ddim.weights.h5"
+    ema_weights = "ddim_baseline_metadata/normal_baseline_ema_ddim.weights.h5"
 else:
     dataset_path = "path/to/dataset"
-    network_weights = "ddim_baseline/pneumonia_baseline_network_ddim.weights.h5"
-    ema_weights = "ddim_baseline/pneumonia_baseline_ema_ddim.weights.h5"
+    network_weights = "ddim_baseline_metadata/pneumonia_baseline_network_ddim.weights.h5"
+    ema_weights = "ddim_baseline_metadata/pneumonia_baseline_ema_ddim.weights.h5"
 
 dataset_repetitions = 5
 num_epochs = 301  # train for at least 50 epochs for good results
