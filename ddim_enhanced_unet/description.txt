@@ -1,0 +1,5 @@
+NORMAL & PNEUMONIA
+- 301 epochs
+- enhanced architecture from residual unet
+- changed MeanSquaredError -> Heuber
+- 1342 images for both normal and pneumonia

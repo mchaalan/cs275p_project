@@ -3,3 +3,9 @@ __pycache__/
 .DS_Store
 .idea
 archive
+img_baseline_normal
+img_baseline_pneumonia
+img_dit_normal
+img_dit_pneumonia
+img_enhanced_normal
+img_enhanced_pneumonia

@@ -1,5 +1,7 @@
 import tensorflow as tf
 from keras import ops
+from enum import Enum
+from tensorflow.keras.preprocessing.image import save_img
 
 image_size = 64
 dataset_repetitions = 5
@@ -41,3 +43,14 @@ def load_ddim_dataset(dataset_path, batch_size):
         .batch(batch_size, drop_remainder=True)
         .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
+
+def save_image(image_tensor, filename):
+    # Convert the EagerTensor to a NumPy array
+    numpy_array = image_tensor.numpy()
+
+    # Save the NumPy array as a PNG image
+    save_img(filename, numpy_array)
+
+class ModelType(Enum):
+    DDIM = 1
+    DDPM = 2
