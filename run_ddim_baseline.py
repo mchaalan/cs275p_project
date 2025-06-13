@@ -22,11 +22,11 @@ normal = False
 
 # data & weights
 if normal:
-    dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/NORMAL"
+    dataset_path = "path/to/dataset"
     network_weights = "ddim_baseline/normal_baseline_network_ddim.weights.h5"
     ema_weights = "ddim_baseline/normal_baseline_ema_ddim.weights.h5"
 else:
-    dataset_path = "/Users/mohamadc/MI Dropbox Dropbox/Mohamad Chaalan/Mac/Downloads/chest_xray/train/PNEUMONIA"
+    dataset_path = "path/to/dataset"
     network_weights = "ddim_baseline/pneumonia_baseline_network_ddim.weights.h5"
     ema_weights = "ddim_baseline/pneumonia_baseline_ema_ddim.weights.h5"
 
