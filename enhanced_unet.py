@@ -34,7 +34,7 @@ def get_group_count(channels):
 
 
 class AdaptiveFeatureModulation(layers.Layer):
-    """Modulates features based on noise level - revolutionary for diffusion!"""
+    """Modulates features based on noise level"""
 
     def __init__(self, channels, **kwargs):
         super().__init__(**kwargs)
